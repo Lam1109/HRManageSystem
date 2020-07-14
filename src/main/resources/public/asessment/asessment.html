@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+<title>考勤信息管理</title>
+<link rel="stylesheet" type="text/css"
+	href="../assets/admin/layui/css/layui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../assets/admin/css/admin.css" />
+</head>
+
+<body>
+	<div class="page-content-wrap" id="asessmentManage">
+		<h5
+			style="text-align: center; font-size: 20px; line-height: 25px; color: #666">考勤信息管理</h5>
+		<hr>
+		<div class="layui-form-item">
+			<div class="layui-inline tool-btn">
+				<button class="layui-btn layui-btn-small site-demo-active"
+					data-type="asessmentAdd">
+					<i class="layui-icon">&#xe654;</i>
+				</button>
+			</div>
+			<div class="layui-inline">
+				<input type="text" id="empName" placeholder="请输入员工名称"
+					autocomplete="off" class="layui-input">
+			</div>
+			<button class="layui-btn layui-btn-normal site-demo-active"
+				data-type="search" id="searchInfo">搜索</button>
+			<table class="layui-hide" id="asessment" lay-filter="asessment"></table>
+
+		</div>
+
+
+		<hr></hr>
+	</div>
+	<script src="../assets/admin/layui/layui.all.js" type="text/javascript"
+		charset="utf-8"></script>
+	<script>
+		layui.use('table', function() {
+			var $ = layui.jquery
+			var table = layui.table;
+
+			table.render({
+				id:'asessmentList',
+				elem : '#asessment',
+				url : '/asessment/getAll',
+				title : '用户数据表',
+				totalRow : true,
+				cols : [ [
+					
+					{
+						field : 'asessmentId',
+						title : '考勤编号'
+					},  
+					{
+						field : 'empName',
+						title : '员工姓名'
+					},
+					{
+						field : 'asessmentType',
+						title : '考勤类型',
+						templet : function(res) {
+							var asessmentType=res.asessmentType;
+							if(1==asessmentType){
+								return '<em>迟到</em>'
+							}
+							if(2==asessmentType){
+								return '<em>早退</em>'
+							}
+							if(3==asessmentType){
+								return '<em>旷工</em>'
+							}
+						}
+					},
+					{
+						field : 'asessmentDate',
+						title : '考勤时间',
+						templet : function(res) {
+							var asessmentDate=res.asessmentDate.substring(0,19);
+							return '<em>'+asessmentDate+'</em>'
+						}
+					},
+					
+					{
+						field : 'deductionSalary',
+						title : '考勤扣薪(元)'
+					},
+					{
+						field : 'asessmentStatus',
+						title : '部门状态',
+						templet : function(res) {
+							var asessmentStatus=res.asessmentStatus;
+							if(1==asessmentStatus){
+								return '<em>正常</em>'
+							}else if(2==asessmentStatus){
+								return '<em>删除</em>'							}
+						}
+					},
+						{
+							fixed : 'right',
+							title : '操作',
+							width : 150,
+							templet : function(res) {
+								var asessmentStatus=res.asessmentStatus;
+								if(1==asessmentStatus){
+									return '<a class="layui-btn layui-btn-danger layui-btn-sm" lay-event="del">删除</a>'
+								}else if(2==asessmentStatus){
+									return '<em>无操作</em>'
+								}
+							}
+						} ] ],
+				page : true
+			});
+			//事件绑定
+			var active = {
+					asessmentAdd : function() {
+						
+						layer.open({
+						      type: 2,
+						      title: '添加账号',
+						      shadeClose: true,
+						      shade: false,
+						   /*    maxmin: true,  *///开启最大化最小化按钮
+						      area: ['800px', '400px'],
+						      content: '/asessment/asessment-add.html'
+						    });
+					
+					},
+				search:function(){
+					var empName=$("#empName").val();
+					table.reload('asessmentList',{
+							method: 'POST'
+						 , where: {"empName":empName},page: {
+						    curr: 1 //重新从第 1 页开始
+						  }
+						 
+						})
+				}
+			};
+			//表格事件绑定
+
+		table.on('tool(asessment)', function(obj) {
+			var data = obj.data;
+			if (obj.event === 'edit') {
+				edit(data);
+			} else if (obj.event === 'del') {
+				layer.confirm('真的删除此考勤记录吗', function(index) {
+					del(data,index);
+				});
+			}
+		});
+		function del(data,index){
+			var param=data;
+			param.asessmentStatus=2;
+			 $.ajax({
+	                //几个参数需要注意一下
+	                    type: "POST",//方法类型
+	                    dataType: "json",//预期服务器返回的数据类型
+	                    url: "/asessment/updateStatusByPoJo",//url
+	                    data: param,
+	                    success: function (result) {
+	                    	if (result.code == "0") {
+	                    			layer.close(index);
+	                    			layer.msg("删除考勤成功");
+	                    			table.reload('asessmentList');
+			                    }else{
+			                    	layer.msg(result.msg);
+			                    }
+	                    },
+	                    error : function() {
+	                    	layer.msg('服务器错误', {
+	                            icon: 5
+	                        });
+	                    }
+	                });
+		}
+	
+		$('#asessmentManage .layui-btn').on('click', function() {
+			var type = $(this).data('type');
+			active[type] ? active[type].call(this) : '';
+		});
+
+	});
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+<title>部门信息管理</title>
+<link rel="stylesheet" type="text/css"
+	href="../assets/admin/layui/css/layui.css" />
+<link rel="stylesheet" type="text/css"
+	href="../assets/admin/css/admin.css" />
+</head>
+
+<body>
+	<div class="page-content-wrap" id="departManage">
+		<h5
+			style="text-align: center; font-size: 20px; line-height: 25px; color: #666">部门信息管理</h5>
+		<hr>
+		<div class="layui-form-item">
+			<div class="layui-inline tool-btn">
+				<button class="layui-btn layui-btn-small site-demo-active"
+					data-type="departAdd">
+					<i class="layui-icon">&#xe654;</i>
+				</button>
+			</div>
+			<div class="layui-inline">
+				<input type="text" id="departName" placeholder="请输入部门名称"
+					autocomplete="off" class="layui-input">
+			</div>
+			<button class="layui-btn layui-btn-normal site-demo-active"
+				data-type="search" id="searchInfo">搜索</button>
+			<table class="layui-hide" id="depart" lay-filter="depart"></table>
+
+		</div>
+
+
+		<hr></hr>
+	</div>
+	<script src="../assets/admin/layui/layui.all.js" type="text/javascript"
+		charset="utf-8"></script>
+	<script>
+		layui.use('table', function() {
+			var $ = layui.jquery
+			var table = layui.table;
+
+			table.render({
+				id:'departList',
+				elem : '#depart',
+				url : '/depart/getAll',
+				title : '用户数据表',
+				totalRow : true,
+				cols : [ [
+					
+					{
+						field : 'departId',
+						title : '部门编号'
+					},
+					{
+						field : 'departName',
+						title : '部门名称'
+					},
+					{
+						field : 'departStatus',
+						title : '部门状态',
+						templet : function(res) {
+							var departStatus=res.departStatus;
+							if(1==departStatus){
+								return '<em>正常</em>'
+							}else if(2==departStatus){
+								return '<em>关闭</em>'							}
+						}
+					},
+					{
+						field : 'createTime',
+						title : '成立时间',
+						templet : function(res) {
+							var createTime=res.createTime.substring(0,10);
+							return '<em>'+createTime+'</em>'
+						}
+					},
+						{
+							fixed : 'right',
+							title : '操作',
+							width : 150,
+							templet : function(res) {
+								var departStatus=res.departStatus;
+								if(1==departStatus){
+									return '<a class="layui-btn layui-btn-sm" lay-event="edit">编辑</a><a class="layui-btn layui-btn-danger layui-btn-sm" lay-event="lock">关闭</a>'
+								}else if(2==departStatus){
+									return '<a class="layui-btn layui-btn-normal  layui-btn-sm " lay-event="unlock">启用</a>'
+								}
+							}
+						} ] ],
+				page : true
+			});
+			//事件绑定
+			var active = {
+					departAdd : function() {
+						
+						layer.open({
+						      type: 2,
+						      title: '添加账号',
+						      shadeClose: true,
+						      shade: false,
+						   /*    maxmin: true,  *///开启最大化最小化按钮
+						      area: ['800px', '400px'],
+						      content: '/depart/depart-add.html'
+						    });
+					
+					},
+				search:function(){
+					var departName=$("#departName").val();
+					table.reload('departList',{
+							method: 'POST'
+						 , where: {"departName":departName},page: {
+						    curr: 1 //重新从第 1 页开始
+						  }
+						 
+						})
+				}
+			};
+			//表格事件绑定
+
+		table.on('tool(depart)', function(obj) {
+			var data = obj.data;
+			if (obj.event === 'edit') {
+				edit(data);
+			} else if (obj.event === 'lock') {
+				layer.confirm('真的关闭此部门吗', function(index) {
+					lock(data,index);
+				});
+			} else if (obj.event === 'unlock') {
+				
+				layer.confirm('真的开启该部门吗', function(index) {
+					unlock(data,index);
+				});
+			}
+		});
+		function lock(data,index){
+			var param=data;
+			param.departStatus=2;
+			 $.ajax({
+	                //几个参数需要注意一下
+	                    type: "POST",//方法类型
+	                    dataType: "json",//预期服务器返回的数据类型
+	                    url: "/depart/updateDepart",//url
+	                    data: param,
+	                    success: function (result) {
+	                    	if (result.code == "0") {
+	                    			layer.close(index);
+	                    			layer.msg("部门关闭成功");
+	                    			table.reload('departList');
+			                    }else{
+			                    	layer.msg(result.msg);
+			                    }
+	                    },
+	                    error : function() {
+	                    	layer.msg('服务器错误', {
+	                            icon: 5
+	                        });
+	                    }
+	                });
+		}
+		function unlock(data,index){
+			var param=data;
+			param.departStatus=1;
+			 $.ajax({
+	                //几个参数需要注意一下
+	                    type: "POST",//方法类型
+	                    dataType: "json",//预期服务器返回的数据类型
+	                    url: "/depart/updateDepart",//url
+	                    data: param,
+	                    success: function (result) {
+	                    	if (result.code == "0") {
+	                    			layer.close(index);
+	                    			layer.msg("部门启用成功");
+	                    			table.reload('departList');
+			                    }else{
+			                    	layer.msg(result.msg);
+			                    }
+	                    },
+	                    error : function() {
+	                    	layer.msg('服务器错误', {
+	                            icon: 5
+	                        });
+	                    }
+	                });
+		}
+		function edit(data){
+			var editFrom = layui.layer.open({
+		        title : "编辑部门信息",
+		        type : 2,
+		        content : "/depart/depart-edit.html",//弹出层页面
+		        area: ['800px', '400px'],
+		        success : function(layero, index){
+		            var body = layui.layer.getChildFrame('body', index);
+		            //获取窗口对象
+		            var iframeWindow = layero.find('iframe')[0].contentWindow;
+		            body.find("#departId").val(data.departId);
+		            body.find("#departName").val(data.departName);
+		            body.find("#createTime").val(data.createTime.substring(0,10));
+		            iframeWindow.layui.form.render();
+		        }});
+		}
+		$('#departManage .layui-btn').on('click', function() {
+			var type = $(this).data('type');
+			active[type] ? active[type].call(this) : '';
+		});
+
+	});
+	</script>
+</body>
+
+</html>

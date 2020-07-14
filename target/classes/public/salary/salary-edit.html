@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+<title>编辑薪资单</title>
+<link rel="stylesheet" type="text/css"
+	href="../assets/admin/layui/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../assets/admin/css/admin.css" />
+</head>
+
+<body>
+	<div class="page-content-wrap" id="salaryEdit">
+
+		<form class="layui-form" action="" id="">
+			<div class="layui-form-item">
+				<label class="layui-form-label">请选择员工</label>
+				<div class="layui-input-block">
+					   <select name="empId" id="empId" lay-verify="required"  lay-search="">
+          				<option value="">请选择员工</option>
+       				 </select>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">薪资月份</label>
+				<div class="layui-input-block">
+				<input type="text" class="layui-input" lay-verify="required"
+						id="salaryId" name="salaryId" style="display:none"  placeholder="薪资编号">
+					<input type="text" class="layui-input" lay-verify="required"
+						id="salaryMonth" name="salaryMonth"  placeholder="请选择薪资月份">
+				</div>
+			</div>
+					<div class="layui-form-item">
+				<label class="layui-form-label">基础工资</label>
+				<div class="layui-input-block">
+					<input type="text" name="baseSalary" id="baseSalary" lay-verify="required|baseSalary"
+						autocomplete="off" placeholder="请输入基础工资" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">绩效工资</label>
+				<div class="layui-input-block">
+					<input type="text" name="achievements" id="achievements"  lay-verify="required|achievements"
+						autocomplete="off" placeholder="请输入绩效工资金额" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">项目奖金</label>
+				<div class="layui-input-block">
+					<input type="text" name="bonus" id="bonus" lay-verify="required|bonus"
+						autocomplete="off" placeholder="请输入项目奖金金额"  class="layui-input">
+				</div>
+			</div>
+				<div class="layui-form-item">
+				<label class="layui-form-label">考勤扣除</label>
+				<div class="layui-input-block">
+					<input type="text" name="checkDeduction"  id="checkDeduction" lay-verify="required|checkDeduction"
+						autocomplete="off" placeholder="此处可修改考勤扣除金额"    class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item m-login-btn" style="text-align:center">
+				<div class="layui-inline">
+					<button class="layui-btn layui-btn-normal" lay-submit lay-filter="updatesalary">提交修改</button>
+				</div>
+				<div class="layui-inline">
+					<button type="reset" class="layui-btn layui-btn-primary  site-demo-active"
+					data-type="reset">取消添加</button>
+				</div>
+			</div>
+		</form>
+
+		<hr></hr>
+	</div>
+	<script src="../assets/admin/layui/layui.all.js" type="text/javascript"
+		charset="utf-8"></script>
+<script>
+		layui.use(['form', 'layedit', 'laydate'], function(){
+		  var form = layui.form
+		  ,layer = layui.layer,layedit=layui.layedit; 
+		  var $ = layui.jquery;
+			var laydate = layui.laydate;
+		  //创建一个编辑器
+		  var editIndex = layedit.build('LAY_demo_editor');
+			//自定义验证规则
+			  form.verify({
+				  baseSalary:[
+					 /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/,
+					 '请输入正确的金额'
+			    ],
+			    achievements:[
+					 /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/,
+					 '请输入正确的金额'
+			    ],
+			    bonus:[
+					 /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/,
+					 '请输入正确的金额'
+			    ]
+			    ,content: function(value){
+			      layedit.sync(editIndex);
+			    }
+			  });
+			
+			
+			
+			//成立日期
+		       laydate.render({
+					elem : '#salaryMonth'
+		            ,format:'yyyy-MM'
+		            ,type:'month'
+		            ,trigger: 'click'
+		        });
+			  form.on('submit(updatesalary)', function(data){
+				    var str=JSON.stringify(data.field)
+				    var param = JSON.parse(str);
+				    param.salaryStatus=1;
+				    $.ajax({
+			                //几个参数需要注意一下
+			                    type: "POST",//方法类型
+			                    dataType: "json",//预期服务器返回的数据类型
+			                    url: "/salary/updateSalary",//url
+			                    data: param,
+			                    success: function (result) {
+			                    	if (result.code == "0") {
+			                    		var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+				    					parent.layer.close(index);
+			                    		parent.layer.msg('修改薪资单信息成功');
+			                    		parent.layui.table.reload('salaryList',{page:{curr:1}});
+					                    } else if(result.code == "1"){
+					                    	layer.msg(result.msg, {
+					                            icon: 5
+					                        });
+					                    }else{
+					                    	layer.msg('服务器错误', {
+					                            icon: 5
+					                        });
+					                    }
+			                    },
+			                    error : function() {
+			                    	layer.msg('服务器错误', {
+			                            icon: 5
+			                        });
+			                    }
+			                });
+				    
+				    return false;
+				  });
+			//触发事件
+				var active = {
+					reset : function() {
+						var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+						parent.layer.close(index);
+						parent.layer.msg('已取消操作');
+					}
+				};
+			  $('#salaryEdit .layui-btn').on('click', function() {
+					var type = $(this).data('type');
+					active[type] ? active[type].call(this) : '';
+				});
+  
+});
+</script>
+</body>
+
+</html>

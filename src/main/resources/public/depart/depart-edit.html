@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+<title>修改部门</title>
+<link rel="stylesheet" type="text/css"
+	href="../assets/admin/layui/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="../assets/admin/css/admin.css" />
+</head>
+
+<body>
+	<div class="page-content-wrap" id="studentAdd">
+
+		<form class="layui-form" action="" id="">
+			<div class="layui-form-item">
+				<label class="layui-form-label">账号名</label>
+				<div class="layui-input-block">
+				<input type="text" name="departId" id="departId" lay-verify="departId"
+						autocomplete="off" placeholder="部门编号" style="display:none" class="layui-input">
+					<input type="text" name="departName" id="departName" lay-verify="departName"
+						autocomplete="off" placeholder="请输入部门名称" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">成立时间</label>
+				<div class="layui-input-block">
+					<input type="text" class="layui-input" lay-verify="required"
+						id="createTime" name="createTime" placeholder="选择成立时间">
+				</div>
+			</div>
+			<div class="layui-form-item m-login-btn" style="text-align:center">
+				<div class="layui-inline">
+					<button class="layui-btn layui-btn-normal" lay-submit lay-filter="upDateDepart">修改部门</button>
+				</div>
+				<div class="layui-inline">
+					<button type="reset" class="layui-btn layui-btn-primary  site-demo-active"
+					data-type="reset">取消修改</button>
+				</div>
+			</div>
+		</form>
+
+		<hr></hr>
+	</div>
+	<script src="../assets/admin/layui/layui.all.js" type="text/javascript"
+		charset="utf-8"></script>
+<script>
+		layui.use(['form', 'layedit', 'laydate'], function(){
+		  var form = layui.form
+		  ,layer = layui.layer,layedit=layui.layedit; 
+		  var $ = layui.jquery;
+			var laydate = layui.laydate;
+		  //创建一个编辑器
+		  var editIndex = layedit.build('LAY_demo_editor');
+			//自定义验证规则
+			  form.verify({
+				  departName:[
+					 /^[\S]{2,20}$/,
+					 '部门名称长度在2-20位之间'
+			    ]
+			    ,content: function(value){
+			      layedit.sync(editIndex);
+			    }
+			  });
+			//成立日期
+		       laydate.render({
+					elem : '#createTime'
+		            ,format:'yyyy-MM-dd'
+		            ,type:'date'
+		            ,trigger: 'click'
+		        });
+			  form.on('submit(upDateDepart)', function(data){
+				    var str=JSON.stringify(data.field)
+				    var param = JSON.parse(str);
+				    param.departStatus=1;
+				    $.ajax({
+			                //几个参数需要注意一下
+			                    type: "POST",//方法类型
+			                    dataType: "json",//预期服务器返回的数据类型
+			                    url: "/depart/updateDepart",//url
+			                    data: param,
+			                    success: function (result) {
+			                    	if (result.code == "0") {
+			                    		var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+				    					parent.layer.close(index);
+			                    		parent.layer.msg('修改部门信息成功');
+			                    		parent.layui.table.reload('departList',{page:{curr:1}});
+					                    } else if(result.code == "1"){
+					                    	layer.msg('信息已存在', {
+					                            icon: 5
+					                        });
+					                    }else{
+					                    	layer.msg('服务器错误', {
+					                            icon: 5
+					                        });
+					                    }
+			                    },
+			                    error : function() {
+			                    	layer.msg('服务器错误', {
+			                            icon: 5
+			                        });
+			                    }
+			                });
+				    
+				    return false;
+				  });
+			//触发事件
+				var active = {
+					reset : function() {
+						var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+						parent.layer.close(index);
+						parent.layer.msg('已取消操作');
+					}
+				};
+			  $('#studentAdd .layui-btn').on('click', function() {
+					var type = $(this).data('type');
+					active[type] ? active[type].call(this) : '';
+				});
+  
+});
+</script>
+</body>
+
+</html>
